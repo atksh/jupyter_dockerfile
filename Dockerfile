@@ -61,27 +61,20 @@ RUN cd /usr/local/src && mkdir lightgbm && cd lightgbm && \
     cd LightGBM && mkdir build && cd build && \
     cmake -DUSE_GPU=1 -DOpenCL_LIBRARY=/usr/local/cuda/lib64/libOpenCL.so -DOpenCL_INCLUDE_DIR=/usr/local/cuda/include/ .. && \
     make -j$(nproc) OPENCL_HEADERS=/usr/local/cuda-11.3/targets/x86_64-linux/include LIBOPENCL=/usr/local/cuda-11.3/targets/x86_64-linux/lib && \
-    cd /usr/local/src/lightgbm/python-package && \
+    cd /usr/local/src/lightgbm/LightGBM/python-package && \
     python setup.py install --precompile
 
 ENV PATH /usr/local/src/lightgbm/LightGBM:${PATH}
 
 RUN /bin/bash -c "source activate py3 && cd /usr/local/src/lightgbm/LightGBM/python-package && python setup.py install --precompile && source deactivate"
 
-# Install PyTorch
-RUN conda install pytorch torchvision torchaudio cudatoolkit=11.1 -c pytorch -c nvidia
-
-# Install Tensorflow
-RUN pip uninstall -y tensorflow && \
-    pip install tensorflow-gpu==2.4.1
-
 # Install numpyro and jax
 RUN pip install numpyro
-RUN pip install --upgrade "jax[cuda110]" -f https://storage.googleapis.com/jax-releases/jax_releases.html
+RUN pip install --upgrade "jax[cuda111]" -f https://storage.googleapis.com/jax-releases/jax_releases.html
 
 # Install scikit-learn-intelex
 RUN conda install -c conda-forge scikit-learn-intelex && conda update --all 
-COPY startup.py $(ipython profile locate default)/startup/00-common-import.py
+COPY startup.py ~/.ipython/startup/00-common-import.py
 
 # Install others
 COPY requirements.txt /tmp/requirements.txt

@@ -4,3 +4,10 @@ seaborn
 catboost
 dask
 xgboost
+
+boto3
+s3fs
+pyarrow
+google-cloud-secret-manager
+google-cloud-bigquery
+pandas-gbq
