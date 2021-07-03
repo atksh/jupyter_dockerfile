@@ -89,8 +89,8 @@ RUN apt-get autoremove -y && apt-get clean && \
 RUN mkdir -p -m 700 ~/.jupyter/ && \
     echo "c.NotebookApp.ip = '*'" >> ~/.jupyter/jupyter_notebook_config.py
 
-VOLUME /home
-WORKDIR /home
+VOLUME /workspace
+WORKDIR /workspace
 
 # IPython
 EXPOSE 8888
