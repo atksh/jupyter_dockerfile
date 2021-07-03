@@ -5,9 +5,12 @@ catboost
 dask
 xgboost
 
+tqdm
+pqdm
 boto3
 s3fs
 pyarrow
 google-cloud-secret-manager
 google-cloud-bigquery
+google-cloud-bigquery-storage
 pandas-gbq

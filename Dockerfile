@@ -66,19 +66,18 @@ RUN cd /usr/local/src && mkdir lightgbm && cd lightgbm && \
 
 ENV PATH /usr/local/src/lightgbm/LightGBM:${PATH}
 
-RUN /bin/bash -c "source activate py3 && cd /usr/local/src/lightgbm/LightGBM/python-package && python setup.py install --precompile && source deactivate"
+RUN /bin/bash -c "source activate py3 && cd /usr/local/src/lightgbm/LightGBM/python-package && python setup.py install --precompile && conda deactivate"
 
 # Install numpyro and jax
-RUN pip install numpyro
-RUN pip install --upgrade "jax[cuda111]" -f https://storage.googleapis.com/jax-releases/jax_releases.html
+RUN /bin/bash -c "source activate py3 && python -m pip install numpyro && conda deactivate"
+RUN /bin/bash -c "source activate py3 && python -m pip install --upgrade "jax[cuda111]" -f https://storage.googleapis.com/jax-releases/jax_releases.html && conda deactivate"
 
 # Install scikit-learn-intelex
 RUN conda install -c conda-forge scikit-learn-intelex && conda update --all 
-COPY startup.py ~/.ipython/startup/00-common-import.py
 
 # Install others
 COPY requirements.txt /tmp/requirements.txt
-RUN pip install --no-cache-dir -r /tmp/requirements.txt && rm /tmp/requirements.txt
+RUN /bin/bash -c "source activate py3 && python -m pip install --no-cache-dir -r /tmp/requirements.txt && rm /tmp/requirements.txt && conda deactivate"
 
 # CleanUp
 RUN apt-get autoremove -y && apt-get clean && \
@@ -88,6 +87,7 @@ RUN apt-get autoremove -y && apt-get clean && \
 # Jupyter: password: keras
 RUN mkdir -p -m 700 ~/.jupyter/ && \
     echo "c.NotebookApp.ip = '*'" >> ~/.jupyter/jupyter_notebook_config.py
+COPY startup.py /root/.ipython/profile_default/startup/00-common-import.py
 
 VOLUME /workspace
 WORKDIR /workspace
@@ -96,4 +96,4 @@ WORKDIR /workspace
 EXPOSE 8888
 
 ENTRYPOINT [ "/tini", "--" ]
-CMD /bin/bash -c "source activate py3 && jupyter lab --allow-root --no-browser --NotebookApp.password='sha1:98b767162d34:8da1bc3c75a0f29145769edc977375a373407824' && source deactivate"
+CMD /bin/bash -c "source activate py3 && jupyter lab --allow-root --no-browser --NotebookApp.password='sha1:98b767162d34:8da1bc3c75a0f29145769edc977375a373407824' && conda deactivate"
