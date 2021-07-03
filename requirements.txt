@@ -2,3 +2,5 @@ transformers
 sentencepiece
 seaborn
 catboost
+dask
+xgboost
