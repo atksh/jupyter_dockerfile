@@ -52,8 +52,7 @@ RUN echo "export PATH=$CONDA_DIR/bin:"'$PATH' > /etc/profile.d/conda.sh && \
     /bin/bash ~/miniconda.sh -b -p $CONDA_DIR && \
     rm ~/miniconda.sh
 
-RUN conda config --set always_yes yes --set changeps1 no && \
-    conda create -y -q -n py3 python=3.8 mkl numpy scipy scikit-learn jupyter notebook jupyterlab ipython pandas matplotlib
+RUN conda install mkl numpy scipy scikit-learn jupyter notebook jupyterlab ipython pandas matplotlib
 
 # Install LightGBM
 RUN cd /usr/local/src && mkdir lightgbm && cd lightgbm && \
@@ -66,18 +65,17 @@ RUN cd /usr/local/src && mkdir lightgbm && cd lightgbm && \
 
 ENV PATH /usr/local/src/lightgbm/LightGBM:${PATH}
 
-RUN /bin/bash -c "source activate py3 && cd /usr/local/src/lightgbm/LightGBM/python-package && python setup.py install --precompile && conda deactivate"
+RUN cd /usr/local/src/lightgbm/LightGBM/python-package && python setup.py install --precompile
 
 # Install numpyro and jax
-RUN /bin/bash -c "source activate py3 && python -m pip install numpyro && conda deactivate"
-RUN /bin/bash -c "source activate py3 && python -m pip install --upgrade "jax[cuda111]" -f https://storage.googleapis.com/jax-releases/jax_releases.html && conda deactivate"
+RUN pip install numpyro && pip install --upgrade "jax[cuda111]" -f https://storage.googleapis.com/jax-releases/jax_releases.html
 
 # Install scikit-learn-intelex
 RUN conda install -c conda-forge scikit-learn-intelex && conda update --all 
 
 # Install others
 COPY requirements.txt /tmp/requirements.txt
-RUN /bin/bash -c "source activate py3 && python -m pip install --no-cache-dir -r /tmp/requirements.txt && rm /tmp/requirements.txt && conda deactivate"
+RUN pip install --no-cache-dir -r /tmp/requirements.txt && rm /tmp/requirements.txt
 
 # CleanUp
 RUN apt-get autoremove -y && apt-get clean && \
@@ -89,6 +87,33 @@ RUN mkdir -p -m 700 ~/.jupyter/ && \
     echo "c.NotebookApp.ip = '*'" >> ~/.jupyter/jupyter_notebook_config.py
 COPY startup.py /root/.ipython/profile_default/startup/00-common-import.py
 
+# Install kite
+RUN apt-get update && \
+    apt-get install -y nodejs npm && \
+    npm install n -g && \
+    n stable && \
+    apt-get purge -y nodejs npm
+
+RUN pip install --upgrade --no-cache-dir \
+    'jupyterlab~=3.0' \
+    'jupyterlab-kite>=2.0.2' \
+    jupyterlab_code_formatter \
+    jupyterlab-vimrc \
+    yapf \
+    && rm -rf ~/.cache/pip \
+    && jupyter labextension install \
+        @hokyjack/jupyterlab-monokai-plus \
+        @ryantam626/jupyterlab_code_formatter \
+        @jupyterlab/toc \
+        @axlair/jupyterlab_vim \
+    && jupyter serverextension enable --py jupyterlab_code_formatter
+RUN cd && \
+    curl -sL https://linux.kite.com/dls/linux/current -o current && \
+    chmod 777 current && \
+    sed -i 's/"--no-launch"//g' current > /dev/null && \
+    ./current --install ./kite-installer
+
+
 VOLUME /workspace
 WORKDIR /workspace
 
@@ -96,4 +121,4 @@ WORKDIR /workspace
 EXPOSE 8888
 
 ENTRYPOINT [ "/tini", "--" ]
-CMD /bin/bash -c "source activate py3 && jupyter lab --allow-root --no-browser --NotebookApp.password='sha1:98b767162d34:8da1bc3c75a0f29145769edc977375a373407824' && conda deactivate"
+CMD /bin/bash -c "jupyter lab --allow-root --no-browser --NotebookApp.password='sha1:98b767162d34:8da1bc3c75a0f29145769edc977375a373407824'"

@@ -4,6 +4,7 @@ seaborn
 catboost
 dask
 xgboost
+jupyterlab-kite>=2.0.2
 
 tqdm
 pqdm
