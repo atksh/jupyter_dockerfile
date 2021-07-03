@@ -18,9 +18,6 @@ ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /tini
 RUN chmod +x /tini
 
 # System packages
-# update: downloads the package lists from the repositories and "updates" them to get information on the newest versions of packages and their
-# dependencies. It will do this for all repositories and PPAs.
-
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     build-essential \
@@ -58,7 +55,6 @@ RUN echo "export PATH=$CONDA_DIR/bin:"'$PATH' > /etc/profile.d/conda.sh && \
 RUN conda config --set always_yes yes --set changeps1 no && \
     conda create -y -q -n py3 python=3.8 mkl numpy scipy scikit-learn jupyter notebook ipython pandas matplotlib
 
-
 # Install LightGBM
 RUN cd /usr/local/src && mkdir lightgbm && cd lightgbm && \
     git clone --recursive --branch stable --depth 1 https://github.com/microsoft/LightGBM && \
@@ -70,18 +66,27 @@ ENV PATH /usr/local/src/lightgbm/LightGBM:${PATH}
 
 RUN /bin/bash -c "source activate py3 && cd /usr/local/src/lightgbm/LightGBM/python-package && python setup.py install --precompile && source deactivate"
 
+# Install PyTorch
+RUN conda install pytorch torchvision torchaudio cudatoolkit=11.1 -c pytorch -c nvidia
+
+# Install Tensorflow
+RUN pip uninstall -y tensorflow && \
+    pip install tensorflow-gpu==2.4.1
+
+# Install numpyro and jax
+RUN pip install numpyro
+RUN pip install --upgrade "jax[cuda111]" -f https://storage.googleapis.com/jax-releases/jax_releases.html
+
+# Install others
+COPY requirements.txt /tmp/requirements.txt
+RUN pip install -r --no-cache-dir /tmp/requirements.txt && rm /tmp/requirements.txt
 
 # CleanUp
 RUN apt-get autoremove -y && apt-get clean && \
     rm -rf /var/lib/apt/lists/* && \
     conda clean -a -y
 
-
-# Jupyter
-# password: keras
-# password key: --NotebookApp.password='sha1:98b767162d34:8da1bc3c75a0f29145769edc977375a373407824'
-
-# Add a notebook profile.
+# Jupyter: password: keras
 RUN mkdir -p -m 700 ~/.jupyter/ && \
     echo "c.NotebookApp.ip = '*'" >> ~/.jupyter/jupyter_notebook_config.py
 
