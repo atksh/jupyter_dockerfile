@@ -1,0 +1,15 @@
+version: '3'
+services:
+  jupyter:
+    build:
+      context: .
+    runtime: nvidia
+    env_file:
+      - ./.env
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=all
+    working_dir: /workspace
+    tty: true
+    ports:
+      - 8888:8888
