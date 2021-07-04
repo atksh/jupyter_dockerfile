@@ -52,7 +52,7 @@ RUN echo "export PATH=$CONDA_DIR/bin:"'$PATH' > /etc/profile.d/conda.sh && \
     /bin/bash ~/miniconda.sh -b -p $CONDA_DIR && \
     rm ~/miniconda.sh
 
-RUN conda install mkl numpy scipy scikit-learn jupyter notebook jupyterlab ipython pandas matplotlib
+RUN conda install mkl numpy scipy scikit-learn jupyter notebook ipython pandas matplotlib
 
 # Install LightGBM
 RUN cd /usr/local/src && mkdir lightgbm && cd lightgbm && \
@@ -68,7 +68,7 @@ ENV PATH /usr/local/src/lightgbm/LightGBM:${PATH}
 RUN cd /usr/local/src/lightgbm/LightGBM/python-package && python setup.py install --precompile
 
 # Install numpyro and jax
-RUN pip install numpyro && pip install --upgrade "jax[cuda111]" -f https://storage.googleapis.com/jax-releases/jax_releases.html
+RUN pip install git+https://github.com/pyro-ppl/numpyro.git && pip install --upgrade "jax[cuda111]" -f https://storage.googleapis.com/jax-releases/jax_releases.html
 
 # Install scikit-learn-intelex
 RUN conda install -c conda-forge scikit-learn-intelex && conda update --all 
@@ -95,18 +95,19 @@ RUN apt-get update && \
     apt-get purge -y nodejs npm
 
 RUN pip install --upgrade --no-cache-dir \
-    'jupyterlab~=3.0' \
+    'jupyterlab==3.0.14' \
     'jupyterlab-kite>=2.0.2' \
+    black \
+    isort \
     jupyterlab_code_formatter \
-    jupyterlab-vimrc \
     yapf \
     && rm -rf ~/.cache/pip \
     && jupyter labextension install \
         @hokyjack/jupyterlab-monokai-plus \
         @ryantam626/jupyterlab_code_formatter \
         @jupyterlab/toc \
-        @axlair/jupyterlab_vim \
     && jupyter serverextension enable --py jupyterlab_code_formatter
+
 RUN cd && \
     curl -sL https://linux.kite.com/dls/linux/current -o current && \
     chmod 777 current && \
