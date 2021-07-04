@@ -114,6 +114,14 @@ RUN cd && \
     sed -i 's/"--no-launch"//g' current > /dev/null && \
     ./current --install ./kite-installer
 
+# Install Tex for nbconvert
+RUN apt-get update && \
+    apt-get install -y \
+    pandoc \
+    texlive-xetex \
+    texlive-fonts-recommended \
+    texlive-latex-recommended
+
 
 VOLUME /workspace
 WORKDIR /workspace
