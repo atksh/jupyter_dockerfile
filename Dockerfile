@@ -54,6 +54,9 @@ RUN echo "export PATH=$CONDA_DIR/bin:"'$PATH' > /etc/profile.d/conda.sh && \
 
 RUN conda install mkl numpy scipy scikit-learn jupyter notebook ipython pandas matplotlib
 
+# Install PyTorch
+RUN conda install pytorch torchvision torchaudio cudatoolkit=11.1 -c pytorch -c nvidia
+
 # Install LightGBM
 RUN cd /usr/local/src && mkdir lightgbm && cd lightgbm && \
     git clone --recursive --branch stable --depth 1 https://github.com/microsoft/LightGBM && \
@@ -73,46 +76,29 @@ RUN pip install git+https://github.com/pyro-ppl/numpyro.git && pip install --upg
 # Install scikit-learn-intelex
 RUN conda install -c conda-forge scikit-learn-intelex && conda update --all 
 
+# Install MeCab
+RUN apt-get update && apt-get install -y \
+    sudo \
+    wget \
+    vim \
+    mecab \
+    libmecab-dev \
+    mecab-ipadic-utf8 \
+    git \
+    make \
+    curl \
+    xz-utils \
+    file \
+    g++ \
+    unzip
+RUN git clone --depth 1 https://github.com/neologd/mecab-ipadic-neologd.git && \
+    cd mecab-ipadic-neologd && \
+    ./bin/install-mecab-ipadic-neologd -n -y && \
+    echo "dicdir=/usr/lib/x86_64-linux-gnu/mecab/dic/mecab-ipadic-neologd" > /etc/mecabrc
+
 # Install others
 COPY requirements.txt /tmp/requirements.txt
 RUN pip install --no-cache-dir -r /tmp/requirements.txt && rm /tmp/requirements.txt
-
-# CleanUp
-RUN apt-get autoremove -y && apt-get clean && \
-    rm -rf /var/lib/apt/lists/* && \
-    conda clean -a -y
-
-# Jupyter: password: keras
-RUN mkdir -p -m 700 ~/.jupyter/ && \
-    echo "c.NotebookApp.ip = '*'" >> ~/.jupyter/jupyter_notebook_config.py
-COPY startup.py /root/.ipython/profile_default/startup/00-common-import.py
-
-# Install kite
-RUN apt-get update && \
-    apt-get install -y nodejs npm && \
-    npm install n -g && \
-    n stable && \
-    apt-get purge -y nodejs npm
-
-RUN pip install --upgrade --no-cache-dir \
-    'jupyterlab==3.0.14' \
-    'jupyterlab-kite>=2.0.2' \
-    black \
-    isort \
-    jupyterlab_code_formatter \
-    yapf \
-    && rm -rf ~/.cache/pip \
-    && jupyter labextension install \
-        @hokyjack/jupyterlab-monokai-plus \
-        @ryantam626/jupyterlab_code_formatter \
-        @jupyterlab/toc \
-    && jupyter serverextension enable --py jupyterlab_code_formatter
-
-RUN cd && \
-    curl -sL https://linux.kite.com/dls/linux/current -o current && \
-    chmod 777 current && \
-    sed -i 's/"--no-launch"//g' current > /dev/null && \
-    ./current --install ./kite-installer
 
 # Install Tex for nbconvert
 RUN apt-get update && \
@@ -122,12 +108,11 @@ RUN apt-get update && \
     texlive-fonts-recommended \
     texlive-latex-recommended
 
+# CleanUp
+RUN apt-get autoremove -y && apt-get clean && \
+    rm -rf /var/lib/apt/lists/* && \
+    conda clean -a -y
 
-VOLUME /workspace
-WORKDIR /workspace
+ENV PORT 8888
+ENTRYPOINT /tini -- jupyter lab --allow-root --no-browser --ip='*' --NotebookApp.password='' --NotebookApp.token='' --NotebookApp.notebook_dir='$HOME' --port $PORT
 
-# IPython
-EXPOSE 8888
-
-ENTRYPOINT [ "/tini", "--" ]
-CMD /bin/bash -c "jupyter lab --allow-root --no-browser --NotebookApp.password='sha1:98b767162d34:8da1bc3c75a0f29145769edc977375a373407824'"

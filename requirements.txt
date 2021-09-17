@@ -4,15 +4,12 @@ seaborn
 catboost
 dask
 xgboost
-jupyterlab-kite>=2.0.2
 japanize-matplotlib
+unidic-lite
+mecab-python3
 
 tqdm
-pqdm
-boto3
 s3fs
 pyarrow
-google-cloud-secret-manager
-google-cloud-bigquery
-google-cloud-bigquery-storage
-pandas-gbq
+
+jupyterlab
